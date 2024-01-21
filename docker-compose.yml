@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+    stable-diffusion:
+        container_name: ${COMPOSE_PROJECT_NAME}
+        build:
+            context: ./
+            dockerfile: Dockerfile
+            args:
+                - DEVICE_UUID
+                - DEVICE_ID
+                - PORT
+                - USER
+        # image: nvidia/cuda:12.1.1-base-ubuntu22.04
+        # command: [ "python3", "webui.py" ]
+        restart: unless-stopped
+        tty: true
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        ports:
+            - '${PORT}:${PORT}'
+        environment:
+            DEVICE_UUID: '${DEVICE_UUID}'
+            DEVICE_ID: '${DEVICE_ID}'
+            PORT: '${PORT}'
+            USER: 'docker'
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        -   driver: nvidia
+                            capabilities: [ gpu ]
+                            device_ids: [ "${DEVICE_UUID}" ]
+        #                             count: all
+        #                        -   capabilities: [ "gpu" ]
+        #                            driver: "nvidia"
+        #                            device_ids: [ "${DEVICE_UUID}" ]
+        # entrypoint: [ '/workspace/webui.sh' ]
+        working_dir: /workspace
+        volumes:
+            - workspace:/workspace
+        networks:
+            - local
+networks:
+    local:
+        driver: bridge
+
+volumes:
+    workspace:
+        driver: local
